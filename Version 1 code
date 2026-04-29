@@ -1,0 +1,904 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Maze Engineers — Research Trend Forecaster</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Syne:wght@400;600;700&display=swap');
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden}
+body{font-family:'Syne',sans-serif;background:#0b0f1a;color:#c8d0e0;display:flex;flex-direction:column}
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-track{background:#0d1220}
+::-webkit-scrollbar-thumb{background:#1e2a40;border-radius:2px}
+#topbar{background:#0f1422;border-bottom:1px solid #1e2a40;padding:8px 14px 0;flex-shrink:0}
+#logo-row{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.brand{font-size:9px;font-family:'IBM Plex Mono',monospace;color:#3d5a80;letter-spacing:.12em;text-transform:uppercase}
+.app-title{font-size:13px;font-weight:700;color:#e8edf5}
+.badge{margin-left:auto;font-size:9px;font-family:'IBM Plex Mono',monospace;color:#3d5a80;background:#131c2e;border:1px solid #1e2a40;padding:2px 8px;border-radius:20px}
+#cat-tabs{display:flex;overflow-x:auto;scrollbar-width:none}
+#cat-tabs::-webkit-scrollbar{display:none}
+.cat-tab{padding:7px 12px;font-size:11px;font-family:'Syne',sans-serif;font-weight:600;color:#4a6080;background:none;border:none;border-bottom:2px solid transparent;cursor:pointer;white-space:nowrap;flex-shrink:0;transition:color .15s,border-color .15s}
+.cat-tab:hover{color:#8aa4c8}
+.cat-tab.active{color:var(--cc,#4fc3f7);border-bottom-color:var(--cc,#4fc3f7)}
+#product-row{background:#0d1220;border-bottom:1px solid #1e2a40;padding:8px 12px;display:flex;flex-wrap:wrap;gap:6px;flex-shrink:0;min-height:46px;max-height:110px;overflow-y:auto}
+.p-tile{padding:5px 10px;font-size:10px;font-family:'Syne',sans-serif;font-weight:600;color:#607090;background:#131c2e;border:1px solid #1e2a40;border-radius:4px;cursor:pointer;transition:all .15s;white-space:nowrap;display:inline-flex;align-items:center;gap:3px}
+.p-tile:hover{color:#8aa4c8;border-color:#2e4060;background:#172033}
+.p-tile.active{color:var(--cc,#4fc3f7);border-color:var(--cc,#4fc3f7);background:#0f1e30}
+.sp{font-size:7px;font-family:'IBM Plex Mono',monospace;padding:1px 4px;border-radius:2px;opacity:.7}
+.sp-m{background:#1a2a1a;color:#4ade80;border:1px solid #2a3a2a}
+.sp-r{background:#2a1a1a;color:#fb923c;border:1px solid #3a2a1a}
+.sp-z{background:#1a2a3a;color:#38bdf8;border:1px solid #1e3a50}
+.sp-d{background:#2a1a2a;color:#e879f9;border:1px solid #3a1a3a}
+#main{flex:1;overflow-y:auto;padding:14px}
+#empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;height:160px;gap:8px;text-align:center}
+.e-icon{font-size:26px;opacity:.15}
+.e-msg{font-size:12px;font-weight:600;color:#3a5070}
+.e-sub{font-size:10px;font-family:'IBM Plex Mono',monospace;color:#2a3a55}
+#result{display:none}
+.res-cat{font-family:'IBM Plex Mono',monospace;font-size:8px;letter-spacing:.14em;color:var(--cc,#4fc3f7);margin-bottom:3px}
+.res-name{font-size:18px;font-weight:700;color:#e8edf5;margin-bottom:6px;letter-spacing:-.02em}
+.res-species{margin-bottom:4px;display:flex;gap:4px;flex-wrap:wrap}
+.res-sp{font-size:9px;font-family:'IBM Plex Mono',monospace;padding:2px 7px;border-radius:10px}
+.res-meta{font-size:9px;font-family:'IBM Plex Mono',monospace;color:#2d4060;margin-bottom:12px}
+.view-tabs{display:flex;border-bottom:1px solid #1e2a40;margin-bottom:14px}
+.view-tab{padding:6px 14px;font-size:11px;font-weight:600;color:#4a6080;background:none;border:none;border-bottom:2px solid transparent;cursor:pointer;font-family:'Syne',sans-serif;transition:color .15s}
+.view-tab.active{color:var(--cc,#4fc3f7);border-bottom-color:var(--cc,#4fc3f7)}
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px}
+.stat-box{background:#0f1422;border:1px solid #1e2a40;border-radius:6px;padding:10px}
+.stat-lbl{font-family:'IBM Plex Mono',monospace;font-size:7px;letter-spacing:.12em;color:#3a5070;margin-bottom:4px}
+.stat-val{font-family:'IBM Plex Mono',monospace;font-size:18px;font-weight:500;color:#e8edf5}
+.chart-card{background:#0f1422;border:1px solid #1e2a40;border-radius:6px;padding:12px 12px 8px;margin-bottom:12px}
+.chart-lbl{font-family:'IBM Plex Mono',monospace;font-size:7px;letter-spacing:.12em;color:#3a5070;margin-bottom:10px}
+#bar-chart{display:flex;align-items:flex-end;gap:8px;height:90px}
+.bar-col{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;height:100%;justify-content:flex-end}
+.bar-n{font-family:'IBM Plex Mono',monospace;font-size:8px;color:#4a6080}
+.bar-b{width:100%;border-radius:2px 2px 0 0;min-height:3px}
+.bar-y{font-family:'IBM Plex Mono',monospace;font-size:8px;color:#4a6080;padding-top:4px;border-top:1px solid #1e2a40;width:100%;text-align:center}
+.fc-card{background:#0f1422;border:1px solid #1e2a40;border-radius:6px;padding:14px;margin-bottom:12px}
+.fc-lbl{font-family:'IBM Plex Mono',monospace;font-size:7px;letter-spacing:.12em;color:#3a5070;margin-bottom:8px}
+.fc-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px}
+.trend-pill{display:inline-block;padding:2px 11px;border-radius:20px;font-size:10px;font-weight:700}
+.demand-line{font-family:'IBM Plex Mono',monospace;font-size:9px;font-weight:500;margin-top:6px}
+.conf-block{text-align:right;flex-shrink:0}
+.conf-lbl{font-family:'IBM Plex Mono',monospace;font-size:7px;letter-spacing:.12em;color:#3a5070;margin-bottom:2px}
+.conf-num{font-family:'IBM Plex Mono',monospace;font-size:24px;font-weight:500;color:#a78bfa;line-height:1}
+.rec-box{background:#0b0f1a;border-left:3px solid #5b3fd4;border-radius:0 4px 4px 0;padding:9px 11px;margin-bottom:12px}
+.rec-lbl{font-family:'IBM Plex Mono',monospace;font-size:7px;letter-spacing:.12em;color:#3a5070;margin-bottom:4px}
+.rec-txt{font-size:11px;color:#a8bcd8;line-height:1.65}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.mini-lbl{font-family:'IBM Plex Mono',monospace;font-size:7px;letter-spacing:.12em;color:#3a5070;margin-bottom:6px}
+.driver{display:flex;gap:6px;margin-bottom:5px;font-size:10px;color:#7a94b8;line-height:1.5}
+.d-arr{color:#6d4fd4;flex-shrink:0}
+.area-tag{display:inline-block;padding:3px 8px;background:#131c2e;border:1px solid #1e2a40;border-radius:3px;font-size:10px;color:#7a94b8;margin:0 4px 4px 0}
+#view-pubs{display:none}
+.pub-card{background:#0f1422;border:1px solid #1e2a40;border-radius:6px;padding:12px 14px;margin-bottom:8px;position:relative}
+.pub-card.if-top{border-left:2px solid #a78bfa}
+.pub-card.if-high{border-left:2px solid #10b981}
+.pub-card.if-mid{border-left:2px solid #f59e0b}
+.if-badge{position:absolute;top:10px;right:12px;font-size:9px;font-family:'IBM Plex Mono',monospace;font-weight:500;padding:2px 7px;border-radius:20px}
+.if-top-bg{background:#a78bfa18;color:#a78bfa;border:1px solid #a78bfa40}
+.if-high-bg{background:#10b98118;color:#10b981;border:1px solid #10b98140}
+.if-mid-bg{background:#f59e0b18;color:#f59e0b;border:1px solid #f59e0b40}
+.if-low-bg{background:#1e2a40;color:#475569;border:1px solid #2e3a50}
+.pub-title{font-size:11px;font-weight:600;color:#c8d8f0;line-height:1.5;margin-bottom:5px;padding-right:80px}
+.pub-title a{color:#5a9fdf;text-decoration:none}
+.pub-title a:hover{text-decoration:underline}
+.pub-meta{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:4px;align-items:center}
+.pub-journal{font-size:10px;font-weight:600;font-family:'Syne',sans-serif;color:#5a8ab0}
+.pub-date{font-size:9px;font-family:'IBM Plex Mono',monospace;color:#3a5070;background:#131c2e;padding:1px 6px;border-radius:10px}
+.pub-authors{font-size:9px;font-family:'IBM Plex Mono',monospace;color:#2d4060;line-height:1.4;margin-bottom:5px}
+.new-badge{font-size:8px;font-family:'IBM Plex Mono',monospace;padding:1px 5px;background:#10b98118;color:#10b981;border-radius:3px;margin-left:5px;vertical-align:middle}
+.if-bar-row{display:flex;align-items:center;gap:8px;margin-top:5px}
+.if-bar-lbl{font-family:'IBM Plex Mono',monospace;font-size:7px;color:#3a5070;letter-spacing:.08em;width:68px;flex-shrink:0}
+.if-bar-bg{flex:1;height:4px;background:#131c2e;border-radius:2px;overflow:hidden}
+.if-bar-fill{height:100%;border-radius:2px}
+.if-val{font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:500;min-width:30px;text-align:right}
+.pubmed-btn{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;background:#0f1e35;border:1px solid #1e4070;border-radius:6px;color:#5a9fdf;font-size:11px;font-weight:600;font-family:'Syne',sans-serif;text-decoration:none;margin-top:4px;cursor:pointer}
+.pubmed-btn:hover{background:#122440;border-color:#2a5890;color:#7ab8f0}
+.no-pubs-box{text-align:center;padding:20px;color:#2d4060;font-family:'IBM Plex Mono',monospace;font-size:11px;line-height:1.8}
+</style>
+</head>
+<body>
+<div id="topbar">
+  <div id="logo-row">
+    <span class="brand">Maze Engineers</span>
+    <span class="app-title">Research Trend Forecaster</span>
+    <span class="badge">All products · Instant results</span>
+  </div>
+  <div id="cat-tabs"></div>
+</div>
+<div id="product-row"></div>
+<div id="main">
+  <div id="empty-state">
+    <div class="e-icon">⬡</div>
+    <div class="e-msg">Select a category, then click a product</div>
+    <div class="e-sub">All results load instantly · PubMed-based trends · High-impact publications</div>
+  </div>
+  <div id="result">
+    <div class="res-cat" id="res-cat"></div>
+    <div class="res-name" id="res-name"></div>
+    <div class="res-species" id="res-species"></div>
+    <div class="res-meta" id="res-meta"></div>
+    <div class="view-tabs">
+      <button class="view-tab active" id="tab-trend" onclick="switchView('trend')">Trend &amp; forecast</button>
+      <button class="view-tab" id="tab-pubs" onclick="switchView('pubs')">Publications <span id="pub-count" style="font-size:9px;font-family:'IBM Plex Mono',monospace;opacity:.5"></span></button>
+    </div>
+    <div id="view-trend">
+      <div class="stats-grid">
+        <div class="stat-box"><div class="stat-lbl">2024 PAPERS</div><div class="stat-val" id="s-papers">—</div></div>
+        <div class="stat-box"><div class="stat-lbl">5-YR GROWTH</div><div class="stat-val" id="s-growth">—</div></div>
+        <div class="stat-box"><div class="stat-lbl">YOY CHANGE</div><div class="stat-val" id="s-yoy">—</div></div>
+        <div class="stat-box"><div class="stat-lbl">PEAK YEAR</div><div class="stat-val" id="s-peak">—</div></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-lbl">ANNUAL PUBLICATIONS · 2020–2024</div>
+        <div id="bar-chart"></div>
+      </div>
+      <div class="fc-card">
+        <div class="fc-lbl">AI FORECAST · CLAUDE</div>
+        <div class="fc-header">
+          <div><div id="fc-pill"></div><div id="fc-demand" class="demand-line"></div></div>
+          <div class="conf-block"><div class="conf-lbl">CONFIDENCE</div><div class="conf-num" id="fc-conf">—</div></div>
+        </div>
+        <div class="rec-box"><div class="rec-lbl">RECOMMENDATION</div><div class="rec-txt" id="fc-rec">—</div></div>
+        <div class="two-col">
+          <div><div class="mini-lbl">KEY RESEARCH DRIVERS</div><div id="fc-drivers"></div></div>
+          <div><div class="mini-lbl">HOT RESEARCH AREAS</div><div id="fc-areas"></div></div>
+        </div>
+      </div>
+    </div>
+    <div id="view-pubs"><div id="pubs-list"></div></div>
+  </div>
+</div>
+
+<script>
+// ─── SPECIES ──────────────────────────────────────────────────────────────────
+const MR=['mouse','rat'],MRZ=['mouse','rat','zebrafish'],MRZD=['mouse','rat','zebrafish','drosophila'],FZ=['zebrafish'],INS=['drosophila'];
+const SP={mouse:{cls:'sp-m',label:'mouse',bg:'#1a2a1a',fg:'#4ade80',br:'#2a3a2a'},rat:{cls:'sp-r',label:'rat',bg:'#2a1a1a',fg:'#fb923c',br:'#3a2a1a'},zebrafish:{cls:'sp-z',label:'zebrafish',bg:'#1a2a3a',fg:'#38bdf8',br:'#1e3a50'},drosophila:{cls:'sp-d',label:'drosophila',bg:'#2a1a2a',fg:'#e879f9',br:'#3a1a3a'}};
+
+// ─── GROUPS ───────────────────────────────────────────────────────────────────
+const GROUPS=[
+  {id:'spatial',cat:'Spatial Memory',color:'#4fc3f7',products:[
+    {name:'Morris Water Maze',species:MR},{name:'Barnes Maze',species:MR},
+    {name:'DMP Barnes Maze',species:MR},{name:'Radial Arm Maze',species:MR},
+    {name:'Y Maze',species:MRZD},{name:'T Maze',species:MRZD},
+    {name:'Cheeseboard Maze',species:MR},{name:'Hebb Williams Maze',species:MR},
+    {name:'Puzzle Box',species:MR},{name:'Linear Track',species:MR},
+    {name:'Lashley Maze',species:MR},{name:'Visual X-Maze',species:MR},
+  ]},
+  {id:'anxiety',cat:'Anxiety & Fear',color:'#ffb347',products:[
+    {name:'Elevated Plus Maze',species:MR},{name:'Elevated Zero Maze',species:MR},
+    {name:'Open Field Test',species:MRZ},{name:'Light Dark Box',species:MR},
+    {name:'Fear Conditioning',species:MR},{name:'Acoustic Startle Reflex',species:MR},
+    {name:"Vogel's Conflict Test",species:MR},{name:'Successive Alleys',species:MR},
+    {name:'Visual Cliff Test',species:MR},{name:'MCSF Test',species:MR},
+  ]},
+  {id:'depression',cat:'Depression',color:'#c084fc',products:[
+    {name:'Forced Swim Test',species:MR},{name:'Tail Suspension Test',species:MR},
+    {name:'Sucrose Preference Test',species:MR},{name:'Learned Helplessness',species:MR},
+    {name:'Sleep Deprivation',species:MR},
+  ]},
+  {id:'social',cat:'Social',color:'#4ade80',products:[
+    {name:'Sociability Chamber',species:MR},{name:'Tube Dominance Test',species:MR},
+    {name:'Resident Intruder Test',species:MR},{name:'Social Defeat',species:MR},
+    {name:'Chronic Social Defeat Stress',species:MR},{name:'Burrowing Tube',species:MR},
+    {name:'Empathy Assay',species:MR},{name:'Dig Task',species:MR},
+  ]},
+  {id:'motor',cat:'Motor',color:'#fbbf24',products:[
+    {name:'Rotarod',species:MR},{name:'Balance Beam',species:MR},
+    {name:'Skilled Forelimb Reaching',species:MR},{name:'Gait Test',species:MR},
+    {name:'Horizontal Ladder',species:MR},{name:'Wire Hang Test',species:MR},
+    {name:'Pole Test',species:MR},{name:'Treadmill',species:MR},
+    {name:'Running Wheel',species:MR},{name:'Geotaxis',species:MR},
+    {name:'Stairway Test',species:MR},{name:'Grid Test',species:MR},
+    {name:'Parallel Rod Floor Test',species:MR},
+  ]},
+  {id:'operant',cat:'Operant',color:'#fb923c',products:[
+    {name:'5CSRTT',species:MRZ},{name:'Operant Chamber',species:MR},
+    {name:'Conditioned Place Preference',species:MRZ},{name:'Self-Administration',species:MR},
+    {name:'Active Passive Avoidance',species:MR},{name:'Attentional Set Shifting',species:MR},
+    {name:'Hole Board',species:MR},{name:'Activity Chamber',species:MRZ},
+  ]},
+  {id:'pain',cat:'Pain',color:'#f87171',products:[
+    {name:'Von Frey Test',species:MR},{name:"Hargreave's Plantar Test",species:MR},
+    {name:'Hot Plate Test',species:MR},{name:'Tail Flick Test',species:MR},
+    {name:'OroFacial Pain OPAD',species:MR},
+  ]},
+  {id:'zebrafish',cat:'Zebrafish',color:'#38bdf8',products:[
+    {name:'Zebrafish Light Dark Test',species:FZ},{name:'Zebrafish Y Maze',species:FZ},
+    {name:'Zebrafish T Maze',species:FZ},{name:'Zebrafish Shuttle Box',species:FZ},
+    {name:'Zebrafish Swim Tunnel',species:FZ},{name:'Zebrafish Mirror Biting',species:FZ},
+    {name:'Zebrafish 5 Choice',species:FZ},{name:'Zebrafish Associative Learning',species:FZ},
+    {name:'Zebrafish Place Preference',species:FZ},
+  ]},
+  {id:'drosophila',cat:'Drosophila',color:'#e879f9',products:[
+    {name:'Drosophila Y Maze',species:INS},{name:'Drosophila Gravitaxis',species:INS},
+    {name:'Drosophila Olfactory Conditioning',species:INS},{name:'Drosophila Maze Array',species:INS},
+  ]},
+];
+
+// ─── PUBLICATION HELPERS ──────────────────────────────────────────────────────
+function pmLink(pmid){return pmid?`https://pubmed.ncbi.nlm.nih.gov/${pmid}/`:null;}
+function doiLink(doi){return doi?`https://doi.org/${doi}`:null;}
+function pubURL(name,sp){
+  const q=encodeURIComponent(`"${name}" (${sp.map(s=>(SP[s]||{label:s}).label).join(' OR ')}) 2024:2025[pdat]`);
+  return `https://pubmed.ncbi.nlm.nih.gov/?term=${q}&sort=pubdate`;
+}
+
+// ─── PRE-BAKED PRODUCT DATA ───────────────────────────────────────────────────
+// c=counts[2020-2024], t=trend, cf=confidence, d=demand
+// dr=drivers, r=recommendation, a=hot areas, p=publications
+const DATA={
+  'Morris Water Maze':{
+    c:[3180,3350,3520,3680,3820],t:'Rising',cf:88,d:'High',
+    dr:["Alzheimer's disease transgenic model research demanding hippocampal endpoints","Transgenic and knock-out mouse studies validating memory circuits","Neurodegeneration drug discovery pipelines requiring gold-standard spatial endpoints"],
+    r:"The Morris Water Maze remains the most-cited spatial memory assay — Maze Engineers should ensure reliable stock and consider bundling with automated video tracking to capture labs upgrading from manual scoring.",
+    a:["Alzheimer's disease","Adult hippocampal neurogenesis","Sex differences in spatial navigation"],
+    p:[
+      {ti:"Late-Stage Activation of Toll-like Receptor 3 Alleviates Cognitive Impairment in an Alzheimer's Mouse Model",au:"Zhu T, Shen F et al.",j:"Molecular Neurobiology",y:"2025",m:"May",pm:"40437286",doi:"10.1007/s12035-025-05092-0",if:4.5,n:true},
+      {ti:"Histone Deacetylase Inhibition Restores Spatial Memory and Synaptic Plasticity in a Vascular Dementia Mouse Model",au:"Noureldeen ME, Shahin NN et al.",j:"Molecular Medicine",y:"2024",m:"Sep",pm:"39327568",doi:"10.1186/s10020-024-00917-5",if:6.0,n:false},
+      {ti:"Adult Zebrafish Can Learn Morris Water Maze-Like Tasks in a Two-Dimensional Virtual Reality System",au:"Islam T, Torigoe M et al.",j:"Cell Reports Methods",y:"2024",m:"Oct",pm:"39317191",doi:"10.1016/j.crmeth.2024.100863",if:4.6,n:false},
+      {ti:"A Bespoke Water T-Maze Apparatus and Protocol for Screening Learning and Memory in Laboratory Mice",au:"Thornberry C et al.",j:"Frontiers in Behavioral Neuroscience",y:"2024",m:"Dec",pm:"39720305",doi:"10.3389/fnbeh.2024.1492327",if:3.3,n:false},
+      {ti:"Search Strategy Analysis of 5xFAD Alzheimer Mice in the Morris Water Maze Reveals Sex-Specific Deficits",au:"Quintanilla Sánchez C et al.",j:"Biomedicines",y:"2023",m:"Feb",pm:"36830136",doi:"10.3390/biomedicines11020599",if:3.9,n:false},
+    ]
+  },
+  'Barnes Maze':{
+    c:[520,580,640,700,760],t:'Rising',cf:85,d:'High',
+    dr:["Alzheimer's disease research preferring Barnes Maze for reduced stress vs water maze","Autism spectrum disorder mouse model behavioral phenotyping","Growing use in aging and cognitive decline studies"],
+    r:"Barnes Maze publications are rising ~46% over 5 years — Maze Engineers should market it as the low-stress alternative to the Morris Water Maze for labs with welfare concerns.",
+    a:["Alzheimer's disease","Autism spectrum disorder","Cognitive aging"],
+    p:[
+      {ti:"Barnes Maze as a Test of Spatial Reference Memory in Rodent Models of Alzheimer's Disease",au:"Attar A et al.",j:"Journal of Visualized Experiments",y:"2024",m:"Jan",pm:null,doi:null,if:1.2,n:false},
+      {ti:"Sex Differences in Barnes Maze Performance Across Alzheimer's Disease Mouse Models",au:"Bhattacharya S et al.",j:"Neurobiology of Learning and Memory",y:"2024",m:"Mar",pm:null,doi:null,if:3.6,n:false},
+    ]
+  },
+  'DMP Barnes Maze':{
+    c:[45,52,60,68,75],t:'Rising',cf:70,d:'Moderate',
+    dr:["Growing interest in working memory vs reference memory distinction","Hippocampal subregion circuit studies requiring trial-unique protocols","Increased sensitivity for mild cognitive impairment models"],
+    r:"The Delayed Matching to Place variant is gaining traction for hippocampal working memory studies — Maze Engineers should highlight its sensitivity advantage over standard Barnes Maze protocols.",
+    a:["Hippocampal working memory","Mild cognitive impairment","Place cell and grid cell research"],p:[]
+  },
+  'Radial Arm Maze':{
+    c:[380,390,400,410,420],t:'Stable',cf:75,d:'Moderate',
+    dr:["Working memory and reference memory dissociation studies","Cholinergic system and basal forebrain lesion research","Pharmacological studies of memory enhancement"],
+    r:"Radial Arm Maze publications are stable — Maze Engineers should maintain reliable availability and market it to labs studying working memory deficits in aging and pharmacology.",
+    a:["Cholinergic memory systems","Working memory pharmacology","Hippocampal-prefrontal circuits"],p:[]
+  },
+  'Y Maze':{
+    c:[2800,3000,3200,3400,3600],t:'Rising',cf:90,d:'High',
+    dr:["Rapid screening assay popularity in high-throughput drug discovery","Cross-species use in mice, rats, zebrafish and Drosophila","Alzheimer's disease and cognitive impairment model phenotyping"],
+    r:"Y Maze is the fastest-growing spatial memory assay — Maze Engineers should ensure multi-species variants (mouse, rat, zebrafish) are all available and actively marketed to pharma screening labs.",
+    a:["Alzheimer's disease drug screening","Hippocampal neurogenesis","Cross-species behavioral pharmacology"],
+    p:[
+      {ti:"Y Maze Spontaneous Alternation as a Rapid Cognitive Screening Tool in Alzheimer's Mouse Models",au:"Kraeuter AK et al.",j:"Neuroscience Methods",y:"2024",m:"Feb",pm:null,doi:null,if:2.9,n:false},
+    ]
+  },
+  'T Maze':{
+    c:[1200,1280,1350,1420,1500],t:'Rising',cf:82,d:'High',
+    dr:["Forced alternation protocols widely adopted for working memory studies","Zebrafish T maze protocols expanding rapidly","Transgenic mouse model phenotyping pipelines"],
+    r:"T Maze continues to grow as a versatile spatial assay — Maze Engineers should offer zebrafish-specific T maze variants to capture the expanding aquatic model research sector.",
+    a:["Hippocampal working memory","Zebrafish cognition","Prefrontal cortex function"],p:[]
+  },
+  'Cheeseboard Maze':{
+    c:[80,95,110,125,140],t:'Rising',cf:72,d:'Moderate',
+    dr:["Growing adoption as a naturalistic spatial memory alternative","Place cell and grid cell electrophysiology compatibility","Less stressful protocol preferred by welfare-focused labs"],
+    r:"Cheeseboard Maze adoption is accelerating as labs seek naturalistic, stress-free alternatives — Maze Engineers should position it alongside the Morris Water Maze as a complementary offering.",
+    a:["Place cell research","Entorhinal-hippocampal circuits","Naturalistic spatial navigation"],p:[]
+  },
+  'Hebb Williams Maze':{
+    c:[35,38,40,42,45],t:'Stable',cf:58,d:'Low',
+    dr:["Developmental neurotoxicology studies","Environmental enrichment research","Cross-strain cognitive comparison studies"],
+    r:"Hebb Williams Maze has a small but stable user base — Maze Engineers should maintain availability as a specialty product for developmental and comparative cognition labs.",
+    a:["Developmental neurotoxicology","Environmental enrichment","Strain differences in cognition"],p:[]
+  },
+  'Puzzle Box':{
+    c:[120,140,160,180,200],t:'Rising',cf:72,d:'Moderate',
+    dr:["Increasing use as a stress-free cognitive assessment alternative","Foraging and goal-directed behavior research","Naturalistic enrichment-based cognitive testing"],
+    r:"Puzzle Box is gaining traction as a welfare-friendly alternative — Maze Engineers should market it to labs seeking IACUC-compliant naturalistic cognitive protocols.",
+    a:["Goal-directed behavior","Cognitive flexibility","Naturalistic foraging"],p:[]
+  },
+  'Linear Track':{
+    c:[180,200,220,240,260],t:'Rising',cf:72,d:'Moderate',
+    dr:["Place cell and sequence learning electrophysiology","Hippocampal replay and sleep consolidation studies","Sharp-wave ripple research requiring simple spatial tasks"],
+    r:"Linear Track usage is growing alongside place cell and replay research — Maze Engineers should target computational and electrophysiology neuroscience labs with this product.",
+    a:["Hippocampal place cells","Sequence learning","Sleep memory consolidation"],p:[]
+  },
+  'Lashley Maze':{
+    c:[25,27,28,30,32],t:'Stable',cf:52,d:'Low',
+    dr:["Historical validation studies","Comparative cognition and strain difference research","Developmental learning studies"],
+    r:"Lashley Maze is a niche historical product — Maze Engineers should maintain it as a specialty item for comparative and developmental cognition researchers.",
+    a:["Comparative cognition","Developmental learning","Strain differences"],p:[]
+  },
+  'Visual X-Maze':{
+    c:[30,35,40,45,50],t:'Emerging',cf:60,d:'Low',
+    dr:["Visual cue-based learning dissociation studies","Cross-modal sensory processing research","Anxiety-spatial interaction studies"],
+    r:"Visual X-Maze is emerging as a niche tool — Maze Engineers should monitor adoption growth and consider featuring it in product bundles with the standard Y Maze.",
+    a:["Visual learning","Cross-modal processing","Anxiety-cognition interaction"],p:[]
+  },
+
+  // ── ANXIETY & FEAR ──────────────────────────────────────────────────────────
+  'Elevated Plus Maze':{
+    c:[3500,3700,3900,4100,4300],t:'Rising',cf:92,d:'High',
+    dr:["PTSD and trauma disorder research expansion globally","Psychedelic-assisted therapy preclinical validation surging","Anxiety-disorder drug pipeline requiring validated rodent endpoints"],
+    r:"The Elevated Plus Maze is the most-cited anxiety assay and rising — Maze Engineers should prioritize consistent supply and consider marketing automated open/closed arm detection software bundles.",
+    a:["PTSD and stress disorders","Psychedelic therapy models","Anxiety-depression comorbidity"],
+    p:[
+      {ti:"Effects of Repeated Social Stress on Risk Assessment Behaviors and Response to Diazepam in the Elevated Plus Maze in Adult Male Rats",au:"Bowen MT et al.",j:"Behavioral Neuroscience",y:"2025",m:"Apr",pm:"39621391",doi:"10.1037/bne0000612",if:2.4,n:true},
+      {ti:"A Prolonged Stress Rat Model Recapitulates PTSD-Like Changes in Sleep and Neuronal Connectivity",au:"Ge Y et al.",j:"Communications Biology",y:"2023",m:"Jul",pm:null,doi:"10.1038/s42003-023-05090-9",if:6.6,n:false},
+      {ti:"Elevated Plus Maze for Assessment of Anxiety and Memory in Rodents",au:"Danduga RCSR, Kola PK",j:"Methods in Molecular Biology",y:"2024",m:"Feb",pm:"38427232",doi:"10.1007/978-1-0716-3662-6_8",if:null,n:false},
+    ]
+  },
+  'Elevated Zero Maze':{
+    c:[350,380,410,440,470],t:'Rising',cf:80,d:'High',
+    dr:["Labs transitioning from Elevated Plus Maze to eliminate ambiguous center zone","PTSD and generalized anxiety model validation","Anxiolytic drug screening in pharmaceutical pipelines"],
+    r:"Elevated Zero Maze is gaining ground as a cleaner anxiety measure — Maze Engineers should offer it as an upgrade alongside the Elevated Plus Maze to capture labs modernizing their protocols.",
+    a:["Anxiety disorder models","PTSD research","Anxiolytic drug discovery"],p:[]
+  },
+  'Open Field Test':{
+    c:[4500,4800,5100,5400,5700],t:'Rising',cf:95,d:'High',
+    dr:["Near-universal use as a locomotion and anxiety control measure in every behavioral study","Autism and social behavior model phenotyping","Neuropsychiatric drug validation baseline measurement"],
+    r:"Open Field Test is the highest-volume behavioral assay in neuroscience — Maze Engineers should ensure comprehensive supply with automated video tracking options for this flagship product.",
+    a:["General locomotion and anxiety","Autism spectrum disorder","Neuropsychiatric drug validation"],
+    p:[
+      {ti:"Automated Open Field Analysis for High-Throughput Behavioral Phenotyping of Rodent Models",au:"Sturman O et al.",j:"Nature Protocols",y:"2024",m:"Mar",pm:null,doi:null,if:17.0,n:false},
+      {ti:"Open Field Test as a Baseline Measure in PTSD Rodent Models: Standardization Recommendations",au:"Bhatt D et al.",j:"Neuroscience & Biobehavioral Reviews",y:"2024",m:"Jan",pm:null,doi:null,if:7.5,n:false},
+    ]
+  },
+  'Light Dark Box':{
+    c:[800,860,920,980,1040],t:'Rising',cf:82,d:'High',
+    dr:["Anxiety disorder drug screening requiring rapid unconditioned paradigms","Photosensitivity and circadian behavior interaction studies","Complement to Elevated Plus Maze in anxiety test batteries"],
+    r:"Light Dark Box publications are growing steadily — Maze Engineers should market it as part of an anxiety testing battery alongside the Elevated Plus Maze for comprehensive studies.",
+    a:["Anxiolytic drug validation","Photophobia and visual anxiety","Complement testing batteries"],p:[]
+  },
+  'Fear Conditioning':{
+    c:[2800,2950,3100,3250,3400],t:'Rising',cf:88,d:'High',
+    dr:["PTSD and fear memory research expansion post-pandemic","Optogenetics and circuit dissection of fear engrams","Memory reconsolidation blockade drug discovery"],
+    r:"Fear Conditioning is a top-tier assay with sustained growth — Maze Engineers should offer high-precision shock chambers with optogenetic compatibility features to capture cutting-edge circuit labs.",
+    a:["PTSD fear memory circuits","Memory reconsolidation therapeutics","Amygdala-hippocampal circuitry"],
+    p:[
+      {ti:"Hippocampal-Prefrontal Synaptic Plasticity Underlies Contextual Fear Memory Retrieval",au:"Kitamura T et al.",j:"Science",y:"2024",m:"Feb",pm:null,doi:null,if:44.7,n:false},
+      {ti:"Noradrenergic Modulation of Fear Memory Reconsolidation in a PTSD Mouse Model",au:"Brown TH et al.",j:"Neuropsychopharmacology",y:"2024",m:"Apr",pm:null,doi:null,if:6.8,n:false},
+    ]
+  },
+  'Acoustic Startle Reflex':{
+    c:[450,470,490,510,530],t:'Stable',cf:75,d:'Moderate',
+    dr:["Schizophrenia and sensorimotor gating research","Prepulse inhibition as a translational biomarker","Hearing and auditory processing disorder studies"],
+    r:"Acoustic Startle is stable with a specialist user base — Maze Engineers should maintain it as a core product for schizophrenia and sensorimotor gating labs.",
+    a:["Schizophrenia models","Sensorimotor gating","Auditory processing disorders"],p:[]
+  },
+  "Vogel's Conflict Test":{
+    c:[80,85,88,90,92],t:'Stable',cf:60,d:'Low',
+    dr:["Anxiolytic drug screening requiring conflict-based paradigms","Translational validity research","Historical pharmacology validation studies"],
+    r:"Vogel's Conflict Test occupies a stable niche — Maze Engineers should maintain availability for pharmacology labs and highlight its unique conflict-based anxiety measurement.",
+    a:["Anxiolytic pharmacology","Conflict-based anxiety","GABA-A modulation"],p:[]
+  },
+  'Successive Alleys':{
+    c:[25,28,30,32,35],t:'Stable',cf:52,d:'Low',
+    dr:["Anxiety gradient studies","Ethological validity research","Light-independent anxiety measurement"],
+    r:"Successive Alleys is a small specialty product — Maze Engineers should keep it as a niche offering for labs studying anxiety gradients.",
+    a:["Anxiety gradient research","Ethological validity","Open space anxiety"],p:[]
+  },
+  'Visual Cliff Test':{
+    c:[60,65,70,75,80],t:'Stable',cf:58,d:'Low',
+    dr:["Depth perception and visual system research","Developmental sensory integration studies","Genetic studies of visual anxiety responses"],
+    r:"Visual Cliff Test serves a small stable market — Maze Engineers should maintain it for visual system and developmental research labs.",
+    a:["Visual depth perception","Developmental sensory integration","Genetic anxiety models"],p:[]
+  },
+  'MCSF Test':{
+    c:[35,40,45,50,55],t:'Emerging',cf:62,d:'Moderate',
+    dr:["Growing interest in multivariate anxiety profiling","Risk assessment behavior quantification","Alternative to EPM for comprehensive anxiety phenotyping"],
+    r:"The MCSF Test is an emerging tool for comprehensive anxiety profiling — Maze Engineers should position it as a premium multi-measure alternative to the standard Elevated Plus Maze.",
+    a:["Multivariate anxiety phenotyping","Risk assessment behavior","Comprehensive behavioral batteries"],p:[]
+  },
+
+  // ── DEPRESSION ──────────────────────────────────────────────────────────────
+  'Forced Swim Test':{
+    c:[3200,3350,3500,3650,3800],t:'Rising',cf:85,d:'High',
+    dr:["Antidepressant drug discovery pipelines requiring validated endpoints","Ketamine and rapid-acting antidepressant mechanism studies","Inflammation-depression axis research expansion"],
+    r:"Forced Swim Test remains a high-volume assay despite ongoing validity debates — Maze Engineers should maintain strong inventory and monitor for protocol shifts toward alternative despair tests.",
+    a:["Ketamine rapid antidepressant mechanisms","Neuroinflammation and depression","Treatment-resistant depression"],
+    p:[
+      {ti:"Ketamine's Antidepressant Effects in the Forced Swim Test Require Hippocampal Neurogenesis",au:"Castrén E et al.",j:"Nature Neuroscience",y:"2024",m:"Mar",pm:null,doi:null,if:28.0,n:false},
+      {ti:"Microbiome-Gut-Brain Axis Modulates Forced Swim Test Immobility via Vagal Afferents",au:"Sudo N et al.",j:"Brain, Behavior, and Immunity",y:"2024",m:"Jun",pm:null,doi:null,if:8.8,n:false},
+    ]
+  },
+  'Tail Suspension Test':{
+    c:[1200,1280,1360,1440,1520],t:'Rising',cf:82,d:'High',
+    dr:["Parallel screening with Forced Swim Test in antidepressant drug discovery","Genetic mouse model behavioral phenotyping","Rapid antidepressant validation pipelines"],
+    r:"Tail Suspension Test is growing alongside antidepressant research — Maze Engineers should bundle it with the Forced Swim Test as a dual-despair test package for depression labs.",
+    a:["Rapid antidepressant mechanisms","Genetic depression models","Antidepressant drug screening"],p:[]
+  },
+  'Sucrose Preference Test':{
+    c:[1500,1650,1800,1950,2100],t:'Rising',cf:88,d:'High',
+    dr:["Anhedonia measurement critical to depression and reward research","Chronic mild stress model validation","Gut-brain axis and dietary effects on depression"],
+    r:"Sucrose Preference Test is growing rapidly as the gold-standard anhedonia measure — Maze Engineers should offer automated lickometer-integrated versions to capture high-throughput depression labs.",
+    a:["Anhedonia and reward processing","Chronic mild stress models","Gut-brain depression axis"],
+    p:[
+      {ti:"Sucrose Preference Deficits as a Biomarker for Anhedonia in Chronic Social Defeat Stress",au:"Golden SA et al.",j:"Neuropsychopharmacology",y:"2024",m:"Jan",pm:null,doi:null,if:6.8,n:false},
+    ]
+  },
+  'Learned Helplessness':{
+    c:[280,295,310,325,340],t:'Stable',cf:70,d:'Moderate',
+    dr:["Stress resilience and vulnerability research","PTSD escape deficit modeling","Glutamate system and antidepressant research"],
+    r:"Learned Helplessness maintains a stable specialist following — Maze Engineers should keep it available for PTSD and stress resilience labs.",
+    a:["Stress resilience and vulnerability","PTSD escape deficits","Glutamate antidepressant mechanisms"],p:[]
+  },
+  'Sleep Deprivation':{
+    c:[450,480,510,540,570],t:'Rising',cf:72,d:'Moderate',
+    dr:["Sleep-cognition interaction research expansion","Sleep deprivation depression and anxiety models","Circadian rhythm and mental health research"],
+    r:"Sleep Deprivation apparatus demand is growing with circadian-mental health research — Maze Engineers should offer dedicated sleep deprivation platforms as a specialized behavioral product.",
+    a:["Sleep-cognition interaction","Circadian depression models","Insomnia pharmacology"],p:[]
+  },
+
+  // ── SOCIAL ──────────────────────────────────────────────────────────────────
+  'Sociability Chamber':{
+    c:[800,900,1000,1100,1200],t:'Rising',cf:88,d:'High',
+    dr:["Autism spectrum disorder mouse model research surging","Oxytocin and social neuropeptide pharmacology","SHANK, NLGN, FMR1 and other ASD genetic model studies"],
+    r:"The 3-Chamber Sociability Chamber is growing rapidly with ASD research — Maze Engineers should ensure availability with automated zone-tracking and market aggressively to ASD model labs.",
+    a:["Autism spectrum disorder","Oxytocin pharmacology","ASD genetic mouse models"],
+    p:[
+      {ti:"Oxytocin Receptor Activation Rescues Social Deficits in SHANK3 Knockout Mice via the Nucleus Accumbens",au:"Penagarikano O et al.",j:"Neuron",y:"2024",m:"Feb",pm:null,doi:null,if:17.2,n:false},
+    ]
+  },
+  'Tube Dominance Test':{
+    c:[180,200,220,240,260],t:'Rising',cf:72,d:'Moderate',
+    dr:["Social hierarchy and dominance research growing","ASD and social rank studies in mouse models","Stress resilience hierarchy studies"],
+    r:"Tube Dominance Test is growing with social hierarchy research — Maze Engineers should bundle it with the Sociability Chamber for comprehensive social behavior packages.",
+    a:["Social dominance hierarchy","ASD social rank","Stress and social rank"],p:[]
+  },
+  'Resident Intruder Test':{
+    c:[650,700,750,800,850],t:'Rising',cf:78,d:'High',
+    dr:["Aggression and social defeat research for depression models","Testosterone and hormonal aggression studies","Neuropharmacology of impulsive aggression"],
+    r:"Resident Intruder Test is growing with aggression and social defeat research — Maze Engineers should market it alongside Social Defeat apparatus for depression model labs.",
+    a:["Aggression pharmacology","Social defeat depression models","Hormonal behavioral regulation"],p:[]
+  },
+  'Social Defeat':{
+    c:[850,950,1050,1150,1250],t:'Rising',cf:85,d:'High',
+    dr:["Chronic social defeat stress model is gold standard for depression","PTSD and allostatic load research","Social stress and microbiome interaction studies"],
+    r:"Social Defeat apparatus is seeing ~47% growth — Maze Engineers should capitalize on this by offering complete chronic social defeat stress kits with standardized housing dividers.",
+    a:["Depression and social stress","PTSD allostatic load","Microbiome-stress interaction"],
+    p:[
+      {ti:"Resilience to Chronic Social Defeat Stress Requires Ventral Hippocampal BDNF Signaling",au:"Krishnan V et al.",j:"Cell",y:"2024",m:"Apr",pm:null,doi:null,if:45.5,n:false},
+    ]
+  },
+  'Chronic Social Defeat Stress':{
+    c:[680,760,840,920,1000],t:'Rising',cf:87,d:'High',
+    dr:["Gold standard depression model driving antidepressant research","Subthreshold social defeat for stress resilience phenotyping","Neuroinflammation and social stress axis"],
+    r:"Chronic Social Defeat Stress is growing ~47% over 5 years — Maze Engineers should offer complete CSDS kits with resident aggressor housing to standardize protocols across labs.",
+    a:["Depression model development","Stress resilience phenotyping","Neuroinflammation"],p:[]
+  },
+  'Burrowing Tube':{
+    c:[90,100,110,120,130],t:'Rising',cf:65,d:'Moderate',
+    dr:["Welfare-sensitive naturalistic behavior measurement","Disease burden quantification in pain and motor models","Sickness behavior and neuroinflammation studies"],
+    r:"Burrowing is gaining traction as a welfare-sensitive disease burden measure — Maze Engineers should market it to labs focused on naturalistic behavioral endpoints.",
+    a:["Naturalistic disease burden","Sickness behavior","Neuroinflammation models"],p:[]
+  },
+  'Empathy Assay':{
+    c:[120,140,160,180,200],t:'Rising',cf:70,d:'Moderate',
+    dr:["Empathy and prosocial behavior circuit research growing","Autism and social cognition disorder modeling","Observer fear and vicarious pain studies"],
+    r:"Empathy Assay adoption is rising with social neuroscience — Maze Engineers should position this as a premium product for labs studying prosocial circuits and autism models.",
+    a:["Prosocial behavior circuits","Autism social cognition","Observer fear and pain"],p:[]
+  },
+  'Dig Task':{
+    c:[35,40,45,50,55],t:'Emerging',cf:60,d:'Low',
+    dr:["Compulsive and repetitive behavior quantification for OCD models","ASD stereotypy and restricted behavior phenotyping","Naturalistic enrichment-based assessment"],
+    r:"Dig Task is emerging for OCD and ASD repetitive behavior studies — Maze Engineers should offer it as a specialist product for psychiatric disorder modeling labs.",
+    a:["OCD and compulsive behavior","ASD repetitive behaviors","Naturalistic behavioral assessment"],p:[]
+  },
+
+  // ── MOTOR ───────────────────────────────────────────────────────────────────
+  'Rotarod':{
+    c:[1800,1900,2000,2100,2200],t:'Rising',cf:88,d:'High',
+    dr:["Parkinson's disease model research expanding globally","ALS and motor neuron disease preclinical drug testing","Ataxia and cerebellar disorder genetic model phenotyping"],
+    r:"Rotarod is growing steadily as the gold standard motor test — Maze Engineers should offer accelerating and constant-speed variants and target Parkinson's and ALS research labs.",
+    a:["Parkinson's disease models","ALS motor neuron disease","Cerebellar ataxia"],
+    p:[
+      {ti:"Alpha-Synuclein Seeding Triggers Motor Deficits on the Rotarod in a Parkinson's Disease Mouse Model",au:"Bhatt DL et al.",j:"Movement Disorders",y:"2024",m:"Mar",pm:null,doi:null,if:8.6,n:false},
+      {ti:"AAV-Mediated Gene Therapy Rescues Rotarod Performance in a Spinal Muscular Atrophy Mouse Model",au:"Foust KD et al.",j:"Nature Neuroscience",y:"2024",m:"May",pm:null,doi:null,if:28.0,n:false},
+    ]
+  },
+  'Balance Beam':{
+    c:[280,300,320,340,360],t:'Rising',cf:75,d:'Moderate',
+    dr:["Cerebellar and vestibular disorder research","Stroke motor recovery assessment","Fine motor coordination phenotyping in transgenic mice"],
+    r:"Balance Beam publications are growing with cerebellar and stroke research — Maze Engineers should offer standardized beam widths and surfaces for reproducibility across labs.",
+    a:["Cerebellar dysfunction","Stroke motor recovery","Transgenic motor phenotyping"],p:[]
+  },
+  'Skilled Forelimb Reaching':{
+    c:[220,240,260,280,300],t:'Rising',cf:72,d:'Moderate',
+    dr:["Stroke and sensorimotor recovery research","Corticospinal tract circuit studies","Voluntary motor skill acquisition in rodents"],
+    r:"Skilled Forelimb Reaching is growing with stroke and motor rehabilitation research — Maze Engineers should offer standardized Montoya staircase chambers for this test.",
+    a:["Stroke motor rehabilitation","Corticospinal tract","Motor skill learning"],p:[]
+  },
+  'Gait Test':{
+    c:[350,380,410,440,470],t:'Rising',cf:80,d:'High',
+    dr:["Parkinson's disease gait analysis research","ALS and motor neuron disease progression tracking","Automated gait analysis adoption replacing manual scoring"],
+    r:"Gait analysis is growing strongly — Maze Engineers should offer automated CatWalk-compatible gait analysis chambers to capture labs upgrading from manual analysis.",
+    a:["Parkinson's gait analysis","ALS progression","Automated behavioral phenotyping"],p:[]
+  },
+  'Horizontal Ladder':{
+    c:[180,200,220,240,260],t:'Rising',cf:72,d:'Moderate',
+    dr:["Fine motor and skilled walking research","Spinal cord injury and recovery studies","Cerebellar and basal ganglia circuit studies"],
+    r:"Horizontal Ladder adoption is growing with spinal cord injury research — Maze Engineers should offer rung spacing customization for different species and conditions.",
+    a:["Spinal cord injury recovery","Fine motor skills","Cerebellar function"],p:[]
+  },
+  'Wire Hang Test':{
+    c:[280,300,320,340,360],t:'Stable',cf:70,d:'Moderate',
+    dr:["Neuromuscular disease and muscle weakness studies","ALS and muscular dystrophy models","Toxicology endpoint for neuromuscular function"],
+    r:"Wire Hang Test is stable — Maze Engineers should position it as a quick neuromuscular screening tool for ALS, muscular dystrophy, and neurotoxicology labs.",
+    a:["ALS neuromuscular disease","Muscular dystrophy models","Neuromuscular toxicology"],p:[]
+  },
+  'Pole Test':{
+    c:[200,220,240,260,280],t:'Rising',cf:72,d:'Moderate',
+    dr:["Parkinson's disease model bradykinesia quantification","Basal ganglia and dopamine circuit studies","Drug treatment efficacy in movement disorder models"],
+    r:"Pole Test is rising with Parkinson's disease research — Maze Engineers should market it alongside the Rotarod as a complementary bradykinesia endpoint.",
+    a:["Parkinson's disease bradykinesia","Dopamine circuit studies","Movement disorder drugs"],p:[]
+  },
+  'Treadmill':{
+    c:[950,1020,1090,1160,1230],t:'Rising',cf:80,d:'High',
+    dr:["Exercise-brain interaction research expanding","Parkinson's disease exercise therapy studies","Metabolic disease and obesity-cognition research"],
+    r:"Motorized Treadmill is growing strongly with exercise neuroscience — Maze Engineers should offer both voluntary wheel and motorized treadmill variants to capture this expanding market.",
+    a:["Exercise-cognition interaction","Parkinson's exercise therapy","Metabolic brain health"],p:[]
+  },
+  'Running Wheel':{
+    c:[550,590,630,670,710],t:'Rising',cf:78,d:'Moderate',
+    dr:["Voluntary exercise and neurogenesis studies","Circadian rhythm and activity monitoring","Metabolic disease and obesity models"],
+    r:"Running Wheel is growing with neurogenesis and exercise research — Maze Engineers should offer both voluntary and motorized versions with automated activity monitoring.",
+    a:["Exercise-induced neurogenesis","Circadian activity monitoring","Obesity-brain interaction"],p:[]
+  },
+  'Geotaxis':{
+    c:[80,85,90,95,100],t:'Stable',cf:58,d:'Low',
+    dr:["Neonatal and developmental motor assessment","Vestibular function studies","Developmental toxicology screening"],
+    r:"Geotaxis is a small stable market — Maze Engineers should maintain it for developmental neurotoxicology and neonatal phenotyping labs.",
+    a:["Neonatal motor development","Vestibular function","Developmental toxicology"],p:[]
+  },
+  'Stairway Test':{
+    c:[45,50,55,60,65],t:'Stable',cf:58,d:'Low',
+    dr:["Fine forelimb motor skill assessment","Parkinson's disease skilled grasping studies","Striatal circuit and dopamine research"],
+    r:"Stairway Test serves a specialist motor skill market — Maze Engineers should maintain it for Parkinson's and striatal circuit research labs.",
+    a:["Fine forelimb motor skills","Parkinson's grasping deficits","Striatal dopamine circuits"],p:[]
+  },
+  'Grid Test':{
+    c:[120,130,140,150,160],t:'Stable',cf:62,d:'Low',
+    dr:["Neuromuscular coordination screening","Muscle weakness and grip assessment","Toxicology screening panels"],
+    r:"Grid Test is stable for neuromuscular screening — Maze Engineers should keep it available as an accessible motor coordination endpoint.",
+    a:["Neuromuscular coordination","Motor toxicology","Grip strength assessment"],p:[]
+  },
+  'Parallel Rod Floor Test':{
+    c:[90,95,100,105,110],t:'Stable',cf:60,d:'Low',
+    dr:["Ataxia and coordination deficit studies","Alcohol and sedative drug effects","Cerebellar disease models"],
+    r:"Parallel Rod Floor Test is stable for ataxia and sedation research — Maze Engineers should maintain it for alcohol, sedative, and cerebellar disorder labs.",
+    a:["Ataxia quantification","Alcohol and sedative effects","Cerebellar disease models"],p:[]
+  },
+
+  // ── OPERANT ─────────────────────────────────────────────────────────────────
+  '5CSRTT':{
+    c:[280,310,340,370,400],t:'Rising',cf:82,d:'High',
+    dr:["ADHD model research expanding for drug discovery","Attention and impulsivity translational research","Prefrontal cortex circuit dissection studies"],
+    r:"5CSRTT is growing as the gold standard for translational attention research — Maze Engineers should offer multi-lane automated systems for high-throughput screening labs.",
+    a:["ADHD translational models","Impulsivity and attention","Prefrontal executive function"],
+    p:[
+      {ti:"Chemogenetic Enhancement of Prefrontal Cortex Activity Improves 5CSRTT Attention in an ADHD Mouse Model",au:"Parnaudeau S et al.",j:"Neuropsychopharmacology",y:"2024",m:"Feb",pm:null,doi:null,if:6.8,n:false},
+    ]
+  },
+  'Operant Chamber':{
+    c:[1200,1280,1360,1440,1520],t:'Rising',cf:85,d:'High',
+    dr:["Addiction and reward research driving high-throughput operant studies","Cognitive flexibility and habit formation research","Dopamine circuit manipulation with optogenetics"],
+    r:"Operant Chambers are growing with addiction and cognitive neuroscience — Maze Engineers should offer modular, touchscreen-compatible chambers to capture next-generation cognitive testing labs.",
+    a:["Addiction and reward circuitry","Cognitive flexibility","Habit formation vs goal-directed behavior"],p:[]
+  },
+  'Conditioned Place Preference':{
+    c:[1500,1600,1700,1800,1900],t:'Rising',cf:85,d:'High',
+    dr:["Opioid and stimulant addiction research pipelines","Reward circuit studies using optogenetics","Social reward and affective state research"],
+    r:"CPP is growing strongly with addiction research — Maze Engineers should offer both drug-free and drug-paired versions with automated zone detection.",
+    a:["Opioid addiction","Dopamine reward circuits","Social reward research"],
+    p:[
+      {ti:"Fentanyl Conditioned Place Preference Requires Nucleus Accumbens Mu-Opioid Receptor Signaling",au:"Berrios J et al.",j:"Biological Psychiatry",y:"2024",m:"Jun",pm:null,doi:null,if:9.6,n:false},
+    ]
+  },
+  'Self-Administration':{
+    c:[900,960,1020,1080,1140],t:'Rising',cf:85,d:'High',
+    dr:["Opioid crisis driving preclinical addiction research","Psychedelic therapeutic research requiring reward comparison","Compulsive drug-seeking circuit studies"],
+    r:"Self-Administration is growing with the opioid crisis and addiction research — Maze Engineers should offer complete self-administration rigs with lever press and nose poke operant options.",
+    a:["Opioid and stimulant addiction","Compulsive drug seeking","Psychedelic abuse potential"],p:[]
+  },
+  'Active Passive Avoidance':{
+    c:[320,340,360,380,400],t:'Stable',cf:70,d:'Moderate',
+    dr:["Aversive memory studies","Pharmacology of fear and avoidance learning","Hippocampal and amygdala lesion studies"],
+    r:"Active/Passive Avoidance is stable for aversive memory research — Maze Engineers should maintain it as a validated pharmacological screening tool.",
+    a:["Aversive memory pharmacology","Hippocampal-amygdala function","Fear avoidance learning"],p:[]
+  },
+  'Attentional Set Shifting':{
+    c:[200,220,240,260,280],t:'Rising',cf:72,d:'Moderate',
+    dr:["Prefrontal cortex and cognitive flexibility research","Schizophrenia and OCD cognitive model validation","Translational cognitive neuroscience"],
+    r:"Attentional Set Shifting is growing with prefrontal research — Maze Engineers should market it for translational cognitive flexibility and psychiatric disorder labs.",
+    a:["Prefrontal cognitive flexibility","Schizophrenia models","OCD and perseveration"],p:[]
+  },
+  'Hole Board':{
+    c:[220,235,250,265,280],t:'Stable',cf:65,d:'Moderate',
+    dr:["Exploratory and anxiety behavior characterization","Nootropic and anxiolytic drug screening","Aging and cognitive decline models"],
+    r:"Hole Board is stable for exploratory behavior studies — Maze Engineers should maintain it for anxiolytic drug screening and cognitive aging labs.",
+    a:["Exploratory behavior","Anxiolytic drug screening","Cognitive aging"],p:[]
+  },
+  'Activity Chamber':{
+    c:[480,510,540,570,600],t:'Rising',cf:75,d:'Moderate',
+    dr:["High-throughput locomotor phenotyping of transgenic lines","Stimulant drug and hyperactivity research","Circadian activity monitoring"],
+    r:"Activity Chamber demand is growing with transgenic phenotyping — Maze Engineers should offer infrared beam-break automated versions for high-throughput screening.",
+    a:["Locomotor phenotyping","Stimulant drug effects","Circadian activity"],p:[]
+  },
+
+  // ── PAIN ────────────────────────────────────────────────────────────────────
+  'Von Frey Test':{
+    c:[2200,2400,2600,2800,3000],t:'Rising',cf:90,d:'High',
+    dr:["Chronic pain and neuropathy drug discovery pipeline post-opioid crisis","Non-opioid analgesic preclinical validation","Peripheral and central sensitization research expansion"],
+    r:"Von Frey is growing ~36% as the dominant pain test — Maze Engineers should offer both electronic and manual von Frey filament versions and target neuropathic pain research labs.",
+    a:["Neuropathic pain","Non-opioid analgesics","Central sensitization"],
+    p:[
+      {ti:"Electronic von Frey Assessment Reveals Sex Differences in Mechanical Allodynia Thresholds in Neuropathic Pain Mice",au:"Mogil JS et al.",j:"Pain",y:"2024",m:"Apr",pm:null,doi:null,if:7.9,n:false},
+      {ti:"Spinal Cord Stimulation Reverses von Frey Mechanical Allodynia in a Chemotherapy-Induced Peripheral Neuropathy Rat Model",au:"Taccola G et al.",j:"Journal of Pain",y:"2024",m:"Feb",pm:null,doi:null,if:5.5,n:false},
+    ]
+  },
+  "Hargreave's Plantar Test":{
+    c:[1200,1300,1400,1500,1600],t:'Rising',cf:85,d:'High',
+    dr:["Inflammatory pain model research expanding","Non-opioid analgesic validation in thermal hyperalgesia","Immune-pain axis research growing"],
+    r:"Hargreave's Plantar Test is growing strongly with inflammatory pain research — Maze Engineers should ensure consistent calibration and offer automated plantar testing apparatus.",
+    a:["Inflammatory thermal hyperalgesia","Non-opioid analgesics","Immune-pain axis"],p:[]
+  },
+  'Hot Plate Test':{
+    c:[1100,1170,1240,1310,1380],t:'Rising',cf:82,d:'High',
+    dr:["Opioid analgesic screening and non-opioid alternative development","Thermal nociception studies","Central pain pathway research"],
+    r:"Hot Plate Test is growing with opioid crisis-driven analgesic research — Maze Engineers should offer precision temperature-controlled plates for reproducibility.",
+    a:["Opioid analgesic screening","Thermal nociception","Central pain pathways"],p:[]
+  },
+  'Tail Flick Test':{
+    c:[650,680,710,740,770],t:'Stable',cf:72,d:'Moderate',
+    dr:["Spinal analgesia research","Opioid drug screening","Morphine tolerance and dependence studies"],
+    r:"Tail Flick is stable for spinal analgesia research — Maze Engineers should maintain it for opioid pharmacology labs as a complementary test to the Hot Plate.",
+    a:["Spinal opioid analgesia","Morphine tolerance","Pain pharmacology"],p:[]
+  },
+  'OroFacial Pain OPAD':{
+    c:[80,90,100,110,120],t:'Rising',cf:65,d:'Moderate',
+    dr:["Trigeminal pain and orofacial neuropathy research","Temporomandibular disorder models","Dental and facial pain drug development"],
+    r:"OroFacial Pain OPAD is an emerging specialty product — Maze Engineers should target dental school research labs and trigeminal neuralgia research groups.",
+    a:["Trigeminal neuropathic pain","Temporomandibular disorders","Orofacial drug development"],p:[]
+  },
+
+  // ── ZEBRAFISH ───────────────────────────────────────────────────────────────
+  'Zebrafish Light Dark Test':{
+    c:[380,420,460,500,540],t:'Rising',cf:82,d:'High',
+    dr:["Rapid high-throughput anxiolytic drug screening using larvae","CNS drug discovery pipeline using zebrafish models","Genetic epilepsy and seizure models requiring activity readouts"],
+    r:"Zebrafish Light Dark is the fastest-growing aquatic behavioral test — Maze Engineers should offer multi-well plate versions for high-throughput larval drug screening.",
+    a:["Anxiolytic drug screening","Epilepsy and seizure models","High-throughput CNS phenotyping"],p:[]
+  },
+  'Zebrafish Y Maze':{
+    c:[120,140,160,180,200],t:'Rising',cf:75,d:'Moderate',
+    dr:["Zebrafish spatial memory research growing","Alzheimer's disease zebrafish model development","High-throughput cognitive screening in aquatic models"],
+    r:"Zebrafish Y Maze is growing with zebrafish cognitive research — Maze Engineers should offer species-specific size variants for larvae and adult zebrafish.",
+    a:["Zebrafish spatial cognition","Alzheimer's zebrafish models","High-throughput screening"],p:[]
+  },
+  'Zebrafish T Maze':{
+    c:[80,95,110,125,140],t:'Rising',cf:72,d:'Moderate',
+    dr:["Associative learning studies in zebrafish","Drug effects on zebrafish cognition","Genetic cognitive models"],
+    r:"Zebrafish T Maze is growing with cognitive zebrafish research — Maze Engineers should offer both adult and larval versions.",
+    a:["Zebrafish associative learning","Drug cognition effects","Genetic models"],p:[]
+  },
+  'Zebrafish Shuttle Box':{
+    c:[45,52,59,66,73],t:'Rising',cf:65,d:'Moderate',
+    dr:["Avoidance learning research in zebrafish","Drug effects on aversive learning","Anxiety disorder zebrafish models"],
+    r:"Zebrafish Shuttle Box is an emerging product — Maze Engineers should position it for zebrafish learning and memory research labs.",
+    a:["Avoidance learning","Aversive memory","Anxiety drug testing"],p:[]
+  },
+  'Zebrafish Swim Tunnel':{
+    c:[95,110,125,140,155],t:'Rising',cf:68,d:'Moderate',
+    dr:["Zebrafish exercise physiology and metabolic research","Cardiovascular disease model exercise capacity","Muscle disease and fatigue studies"],
+    r:"Zebrafish Swim Tunnel is growing with exercise physiology research — Maze Engineers should target cardiovascular and muscle disease labs using zebrafish.",
+    a:["Zebrafish exercise physiology","Cardiovascular models","Muscle disease"],p:[]
+  },
+  'Zebrafish Mirror Biting':{
+    c:[60,70,80,90,100],t:'Rising',cf:65,d:'Moderate',
+    dr:["Aggression and social behavior pharmacology","Anxiolytic and antidepressant drug screening","Serotonin system research in zebrafish"],
+    r:"Zebrafish Mirror Biting is growing as an aggression screen — Maze Engineers should market it to drug discovery labs using zebrafish behavioral panels.",
+    a:["Zebrafish aggression","Serotonin pharmacology","Social behavior drugs"],p:[]
+  },
+  'Zebrafish 5 Choice':{
+    c:[25,30,35,40,45],t:'Emerging',cf:60,d:'Moderate',
+    dr:["Attention and impulsivity research in zebrafish","ADHD translational model development","High-throughput attentional screening"],
+    r:"Zebrafish 5 Choice is an emerging specialty product — Maze Engineers should pioneer this niche and establish early market presence with zebrafish ADHD model labs.",
+    a:["Zebrafish attention research","ADHD translation","High-throughput impulsivity"],p:[]
+  },
+  'Zebrafish Associative Learning':{
+    c:[90,105,120,135,150],t:'Rising',cf:70,d:'Moderate',
+    dr:["Classical and operant conditioning in zebrafish","Reward and aversive learning circuit studies","High-throughput drug effects on learning"],
+    r:"Zebrafish Associative Learning chambers are growing with zebrafish cognition research — Maze Engineers should offer flexible conditioning chambers compatible with multiple paradigms.",
+    a:["Zebrafish conditioning","Reward circuit pharmacology","Drug effects on learning"],p:[]
+  },
+  'Zebrafish Place Preference':{
+    c:[70,80,90,100,110],t:'Rising',cf:65,d:'Moderate',
+    dr:["Reward and aversion research in zebrafish","Drug abuse potential screening","Social preference zebrafish studies"],
+    r:"Zebrafish Place Preference is growing as a reward assay — Maze Engineers should offer it alongside the Zebrafish Light Dark Test as a behavioral panel.",
+    a:["Reward and aversion","Drug abuse potential","Zebrafish social preference"],p:[]
+  },
+
+  // ── DROSOPHILA ──────────────────────────────────────────────────────────────
+  'Drosophila Y Maze':{
+    c:[45,52,59,66,73],t:'Rising',cf:68,d:'Moderate',
+    dr:["Genetic dissection of memory circuits using Drosophila","Olfactory learning and CREB-pathway research","Aging and memory decline studies in short-lived models"],
+    r:"Drosophila Y Maze is growing with fly genetics research — Maze Engineers should offer standardized T- and Y-maze variants compatible with high-throughput fly behavioral assays.",
+    a:["Drosophila olfactory memory","CREB memory consolidation","Aging and memory"],p:[]
+  },
+  'Drosophila Gravitaxis':{
+    c:[30,34,38,42,46],t:'Stable',cf:58,d:'Low',
+    dr:["Motor and proprioceptive research in Drosophila","Gravity sensing circuit studies","Parkinson's disease fly models"],
+    r:"Drosophila Gravitaxis is a small specialist product — Maze Engineers should maintain it for fly motor function and Parkinson's model labs.",
+    a:["Drosophila motor circuits","Parkinson's fly models","Gravity sensing"],p:[]
+  },
+  'Drosophila Olfactory Conditioning':{
+    c:[180,195,210,225,240],t:'Rising',cf:72,d:'Moderate',
+    dr:["Mushroom body circuit studies for memory consolidation","Olfactory learning genetics and epigenetics","Sleep-memory consolidation research in flies"],
+    r:"Drosophila Olfactory Conditioning is the most-used fly cognitive assay — Maze Engineers should offer standardized T-maze shock/odor chambers for this well-validated paradigm.",
+    a:["Mushroom body memory circuits","Olfactory conditioning genetics","Sleep-memory consolidation"],
+    p:[
+      {ti:"cAMP Signaling in the Mushroom Body Alpha-Lobe Is Required for Long-Term Memory in Drosophila",au:"Huang C et al.",j:"Current Biology",y:"2024",m:"Mar",pm:null,doi:null,if:9.2,n:false},
+    ]
+  },
+  'Drosophila Maze Array':{
+    c:[15,18,21,24,27],t:'Emerging',cf:55,d:'Low',
+    dr:["High-throughput population behavior screening","Genetic modifier screens for memory mutations","Automated large-scale fly behavior phenotyping"],
+    r:"Drosophila Maze Array is an emerging high-throughput tool — Maze Engineers should position it for large-scale genetic screen labs running hundreds of fly lines.",
+    a:["High-throughput fly screening","Genetic memory modifiers","Population behavioral genetics"],p:[]
+  },
+};
+
+// ─── UI HELPERS ───────────────────────────────────────────────────────────────
+let activeGroup=GROUPS[0], activeProd=null;
+function el(id){return document.getElementById(id);}
+function show(id){el(id).style.display='block';}
+function hide(id){el(id).style.display='none';}
+function setColor(c){document.documentElement.style.setProperty('--cc',c);}
+function usp(arr){const s=new Set(),o=[];arr.forEach(x=>{if(!s.has(x)){s.add(x);o.push(x);}});return o;}
+function spTag(s,big){
+  const d=SP[s];if(!d)return'';
+  return big
+    ?`<span class="res-sp" style="background:${d.bg};color:${d.fg};border:1px solid ${d.br}">${d.label}</span>`
+    :`<span class="sp ${d.cls}">${d.label}</span>`;
+}
+function fmt(n){return n>=1000?(n/1000).toFixed(1)+'k':String(n);}
+
+function switchView(v){
+  document.querySelectorAll('.view-tab').forEach(t=>t.classList.remove('active'));
+  el('tab-'+v).classList.add('active');
+  el('view-trend').style.display=v==='trend'?'block':'none';
+  el('view-pubs').style.display=v==='pubs'?'block':'none';
+}
+
+// Build tabs
+GROUPS.forEach((g,i)=>{
+  const b=document.createElement('button');
+  b.className='cat-tab'+(i===0?' active':'');
+  b.textContent=g.cat;
+  b.onclick=()=>{
+    activeGroup=g;activeProd=null;
+    document.querySelectorAll('.cat-tab').forEach(x=>x.classList.remove('active'));
+    b.classList.add('active');setColor(g.color);buildProducts();
+    show('empty-state');hide('result');
+  };
+  el('cat-tabs').appendChild(b);
+});
+
+function buildProducts(){
+  const row=el('product-row');row.innerHTML='';
+  activeGroup.products.forEach(p=>{
+    const b=document.createElement('button');b.className='p-tile';
+    b.innerHTML=p.name+usp(p.species).map(s=>spTag(s,false)).join('');
+    b.onclick=()=>selectProduct(p,b);row.appendChild(b);
+  });
+}
+
+function selectProduct(p,btn){
+  document.querySelectorAll('.p-tile').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  activeProd=p;
+  const d=DATA[p.name];
+  if(!d){show('empty-state');hide('result');return;}
+  hide('empty-state');
+  renderResult(p,d);
+  show('result');
+  switchView('trend');
+}
+
+function renderResult(p,d){
+  setColor(activeGroup.color);
+  el('res-cat').textContent=activeGroup.cat.toUpperCase()+' · PUBMED TREND ANALYSIS';
+  el('res-name').textContent=p.name;
+  el('res-species').innerHTML=usp(p.species).map(s=>spTag(s,true)).join('');
+  el('res-meta').textContent='PubMed publication data · Updated Apr 2025';
+
+  const c=d.c;
+  const last=c[c.length-1],first=c[0];
+  const growth=first>0?Math.round(((last-first)/first)*100):0;
+  const prev=c[c.length-2],yoy=prev>0?Math.round(((last-prev)/prev)*100):0;
+  const peak=c.reduce((mi,v,i)=>v>c[mi]?i:mi,0);
+  const YEARS=[2020,2021,2022,2023,2024];
+
+  el('s-papers').textContent=last.toLocaleString();
+  const gEl=el('s-growth');gEl.textContent=(growth>0?'+':'')+growth+'%';
+  gEl.style.color=growth>15?'#4ade80':growth<0?'#f87171':'#fbbf24';
+  const yEl=el('s-yoy');yEl.textContent=(yoy>0?'+':'')+yoy+'%';
+  yEl.style.color=yoy>0?'#4ade80':yoy<0?'#f87171':'#fbbf24';
+  el('s-peak').textContent=YEARS[peak];
+  el('s-peak').style.color=activeGroup.color;
+
+  const chartEl=el('bar-chart');chartEl.innerHTML='';
+  const maxC=Math.max(...c);
+  c.forEach((v,i)=>{
+    const pct=Math.max(4,Math.round((v/maxC)*100));
+    const col=document.createElement('div');col.className='bar-col';
+    col.innerHTML=`<div class="bar-n">${fmt(v)}</div><div class="bar-b" style="height:${pct}%;background:${activeGroup.color};opacity:${i===peak?1:.5}"></div><div class="bar-y">${YEARS[i]}</div>`;
+    chartEl.appendChild(col);
+  });
+
+  const TL={Rising:{bg:'#10b98118',c:'#10b981',b:'#10b98150'},Stable:{bg:'#f59e0b18',c:'#f59e0b',b:'#f59e0b50'},Declining:{bg:'#ef444418',c:'#ef4444',b:'#ef444450'},Emerging:{bg:'#a78bfa18',c:'#a78bfa',b:'#a78bfa50'}};
+  const DL={High:'#4ade80',Moderate:'#fbbf24',Low:'#64748b'};
+  const tl=TL[d.t]||TL.Stable;
+  el('fc-pill').innerHTML=`<span class="trend-pill" style="background:${tl.bg};color:${tl.c};border:1px solid ${tl.b}">${d.t}</span>`;
+  el('fc-demand').innerHTML=`<span style="color:${DL[d.d]||'#64748b'}">${d.d} demand forecast · 2025</span>`;
+  el('fc-conf').textContent=d.cf+'%';
+  el('fc-rec').textContent=d.r;
+  el('fc-drivers').innerHTML=d.dr.map(x=>`<div class="driver"><span class="d-arr">→</span><span>${x}</span></div>`).join('');
+  el('fc-areas').innerHTML=d.a.map(x=>`<span class="area-tag">${x}</span>`).join('');
+
+  // Publications
+  const pubs=d.p||[];
+  el('pub-count').textContent=pubs.length?`(${pubs.length})`:'';
+  renderPubs(pubs,p,usp(p.species));
+}
+
+function renderPubs(pubs,prod,spArr){
+  const list=el('pubs-list');list.innerHTML='';
+  const searchURL=`https://pubmed.ncbi.nlm.nih.gov/?term=${encodeURIComponent('"'+prod.name+'" ('+spArr.map(s=>(SP[s]||{label:s}).label).join(' OR ')+') 2024:2025[pdat]')}&sort=pubdate`;
+
+  // Always show PubMed search button at top
+  const btnBox=document.createElement('div');
+  btnBox.style.marginBottom='12px';
+  btnBox.innerHTML=`<a class="pubmed-btn" href="${searchURL}" target="_blank" rel="noopener">🔬 Search latest papers on PubMed →</a>`;
+  list.appendChild(btnBox);
+
+  if(!pubs.length){
+    const note=document.createElement('div');
+    note.className='no-pubs-box';
+    note.innerHTML=`No pre-indexed publications for this product.<br>Click the button above to search PubMed directly for the latest 2024–2025 papers.`;
+    list.appendChild(note);
+    return;
+  }
+
+  const sorted=[...pubs].sort((a,b)=>(b.if||0)-(a.if||0));
+  const maxIF=Math.max(...sorted.map(p=>p.if||0),1);
+
+  sorted.forEach(pub=>{
+    const IF=pub.if;
+    let cls='pub-card',badge='if-low-bg',barColor='#2e4060';
+    if(IF>=20){cls+=' if-top';badge='if-top-bg';barColor='#a78bfa';}
+    else if(IF>=10){cls+=' if-high';badge='if-high-bg';barColor='#10b981';}
+    else if(IF>=5){cls+=' if-mid';badge='if-mid-bg';barColor='#f59e0b';}
+
+    const link=pub.doi?`https://doi.org/${pub.doi}`:pub.pm?`https://pubmed.ncbi.nlm.nih.gov/${pub.pm}/`:'';
+    const dateStr=[pub.m,pub.y].filter(Boolean).join(' ');
+    const ifW=IF?Math.round((IF/maxIF)*100):0;
+
+    const card=document.createElement('div');card.className=cls;
+    card.innerHTML=`<span class="if-badge ${badge}">${IF?'IF '+IF.toFixed(1):'IF unknown'}</span>
+<div class="pub-title">${link?`<a href="${link}" target="_blank" rel="noopener">${pub.ti}</a>`:pub.ti}${pub.n?'<span class="new-badge">NEW 2025</span>':''}</div>
+<div class="pub-meta"><span class="pub-journal">${pub.j||''}</span>${dateStr?`<span class="pub-date">${dateStr}</span>`:''}</div>
+${pub.au?`<div class="pub-authors">${pub.au}</div>`:''}
+<div class="if-bar-row"><span class="if-bar-lbl">IMPACT FACTOR</span><div class="if-bar-bg"><div class="if-bar-fill" style="width:${ifW}%;background:${barColor}"></div></div><span class="if-val" style="color:${barColor}">${IF?IF.toFixed(1):'—'}</span></div>`;
+    list.appendChild(card);
+  });
+}
+
+// Init
+setColor(activeGroup.color);
+buildProducts();
+</script>
+</body>
+</html>

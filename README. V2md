@@ -1,13 +1,12 @@
-
 # Maze Engineers — Research Trend Forecaster
 
-A standalone, self-contained HTML dashboard for tracking PubMed publication trends and forecasting product demand across Maze Engineers' full behavioral neuroscience equipment catalogue.
+A standalone, self-contained HTML dashboard for tracking PubMed publication trends, forecasting product demand, and receiving real-time alerts when new high-impact papers are published — across Maze Engineers' full behavioral neuroscience equipment catalogue.
 
 ---
 
 ## Overview
 
-The Research Trend Forecaster gives the Maze Engineers team instant access to publication volume trends, AI-generated demand forecasts, and recent high-impact journal publications — all organized by product category and species. No internet connection to external APIs is required after download; all trend data and forecasts are pre-baked into the file.
+The Research Trend Forecaster gives the Maze Engineers team instant access to publication volume trends, AI-generated demand forecasts, recent high-impact journal publications, and automated new publication alerts — all organized by product category and species. No external API keys or backend required. All trend and forecast data is pre-baked into the file; live PubMed scanning runs directly from the browser.
 
 ---
 
@@ -34,6 +33,18 @@ The Research Trend Forecaster gives the Maze Engineers team instant access to pu
 - Each paper includes: title (linked to PubMed/DOI), journal, authors, date, impact factor bar
 - NEW 2025 badge for papers published this year
 - Live "Search latest papers on PubMed" button for every product — always up to date
+
+### 🔔 Publication Alerts (New in v1.1)
+- One-click scan across **all 75+ products simultaneously** — no manual checking required
+- Configurable date range: last 30 / 60 / 90 days / 6 months / 12 months
+- Configurable minimum impact factor threshold: IF 3+ / 5+ / 10+ / 20+
+- Live progress bar showing scan status per product
+- Summary stats: total papers found, products with new papers, high-impact count
+- Results sorted by journal impact factor — highest first
+- Red dot indicator on the alert button when high-impact papers (IF 10+) are found
+- 150+ journal impact factors pre-loaded for instant IF lookup
+- Links directly to PubMed or DOI for every paper
+- Powered by NCBI PubMed E-utilities API (free, no key required)
 
 ---
 
@@ -68,19 +79,19 @@ Each product tile displays species badges indicating which model organisms the r
 
 ## Running the App
 
-Because the app fetches fonts from Google Fonts, it works best when served over HTTP rather than opened directly as a file. The simplest way is a one-line local server.
-
-### Mac / Linux
-```bash
-cd ~/Downloads
-python3 -m http.server 8080
-```
-Then open: [http://localhost:8080](http://localhost:8080)
+The app must be served over HTTP (not opened directly as a file) for PubMed scanning and font loading to work correctly.
 
 ### Windows
 ```cmd
 cd %USERPROFILE%\Downloads
 python -m http.server 8080
+```
+Then open: [http://localhost:8080](http://localhost:8080)
+
+### Mac / Linux
+```bash
+cd ~/Downloads
+python3 -m http.server 8080
 ```
 Then open: [http://localhost:8080](http://localhost:8080)
 
@@ -90,49 +101,67 @@ npx serve .
 ```
 Then open: [http://localhost:3000](http://localhost:3000)
 
+> **Note:** Python is required for the local server. If `python` is not recognized, download it from [python.org](https://www.python.org/downloads/) and check **"Add Python to PATH"** during installation.
+
 ---
 
 ## Hosting on GitHub Pages
 
 To make the app accessible from any browser without running a local server:
 
-1. Create a new GitHub repository (e.g. `maze-forecaster`)
+1. Create a new GitHub repository (e.g. `maze-forecaster`) and set it to **Private**
 2. Upload `maze_engineers_forecaster.html` and rename it to `index.html`
 3. Go to **Settings → Pages → Source** and select the `main` branch
 4. Your app will be live at `https://yourusername.github.io/maze-forecaster`
 
 ---
 
-## Updating the Data
+## Using the Publication Alerts
 
-All trend data, forecasts, and publications are stored in the `DATA` object inside the `<script>` tag of the HTML file. Each product entry contains:
+1. Click the **🔔 Publication Alerts** button in the top-right of the app header
+2. Set your preferred **date range** (how far back to search)
+3. Set your **minimum impact factor** (papers below this threshold are filtered out)
+4. Click **Scan All Products** — the app will query PubMed for every product
+5. Results appear sorted by impact factor when the scan completes (~2–3 minutes for all products)
+6. A red dot appears on the alert button if any IF 10+ papers are found
+
+Scans use the NCBI PubMed E-utilities API with a small delay between requests to respect NCBI rate limits.
+
+---
+
+## Updating the Pre-Baked Data
+
+All trend data, forecasts, and featured publications are stored in the `DATA` object inside the `<script>` tag. Each product entry contains:
 
 ```js
 'Product Name': {
   c: [2020_count, 2021_count, 2022_count, 2023_count, 2024_count],
-  t: 'Rising',          // trend label
-  cf: 88,               // confidence %
-  d: 'High',            // demand forecast
+  t: 'Rising',           // trend label: Rising | Stable | Declining | Emerging
+  cf: 88,                // confidence score (50–99)
+  d: 'High',             // demand forecast: High | Moderate | Low
   dr: ['driver 1', 'driver 2', 'driver 3'],
   r: 'Recommendation text for Maze Engineers.',
   a: ['hot area 1', 'hot area 2', 'hot area 3'],
-  p: [                  // publications array
+  p: [                   // featured publications (sorted by IF descending)
     {
       ti: 'Paper title',
       au: 'Authors et al.',
       j:  'Journal Name',
       y:  '2024',
       m:  'Jan',
-      pm: 'PMID',       // PubMed ID (or null)
+      pm: 'PMID',        // PubMed ID (or null)
       doi: '10.xxx/yyy', // DOI (or null)
-      if: 6.5,          // impact factor (or null)
-      n:  false         // true = NEW 2025
+      if: 6.5,           // impact factor (or null)
+      n:  false          // true = NEW 2025
     }
   ]
 }
 ```
 
-To add a new paper, append an entry to the `p` array of the relevant product and refresh the page.
+To add a journal to the impact factor lookup table, find the `JIF` object in the script and add an entry:
+```js
+'Journal of Example Science': 8.4,
+```
 
 ---
 
@@ -140,16 +169,20 @@ To add a new paper, append an entry to the `p` array of the relevant product and
 
 - Pure HTML, CSS, JavaScript — no build tools, no dependencies, no framework
 - Fonts: [IBM Plex Mono](https://fonts.google.com/specimen/IBM+Plex+Mono) + [Syne](https://fonts.google.com/specimen/Syne) via Google Fonts
-- PubMed live search links via NCBI E-utilities URL format
+- PubMed live scanning via NCBI E-utilities API (esearch + esummary endpoints)
 - DOI links via `doi.org`
+- 150+ journal impact factors pre-loaded from Clarivate Journal Citation Reports
 
 ---
 
 ## File Structure
 
 ```
-maze_engineers_forecaster.html   ← entire app in one file
-README.md                        ← this file
+index.html        ← entire app in one file (rename from maze_engineers_forecaster.html)
+README.md         ← this file
+CHANGELOG.md      ← version history
+LICENSE           ← proprietary license
+.gitignore        ← git ignore rules
 ```
 
 ---
@@ -160,3 +193,4 @@ Maze Engineers — [mazeengineers.com](https://mazeengineers.com)
 
 Data sources: PubMed / NCBI, journal impact factors from Clarivate Journal Citation Reports.  
 Last data update: April 2025.
+

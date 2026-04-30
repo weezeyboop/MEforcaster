@@ -1,0 +1,76 @@
+# Changelog
+
+All notable changes to the Maze Engineers Research Trend Forecaster are documented here.
+
+Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
+
+---
+
+## [1.1.0] — 2025-04-30
+
+### Added
+- **🔔 Publication Alerts panel** — scan all 75+ products simultaneously for new PubMed publications without manual checking
+- **Configurable date range** — choose last 30, 60, 90 days, 6 months, or 12 months for alert scans
+- **Configurable IF threshold** — filter results to only show papers from journals with IF 3+, 5+, 10+, or 20+
+- **Live scan progress bar** — shows which product is being scanned and overall completion percentage
+- **Scan summary stats** — total papers found, number of products with new papers, high-impact paper count, and timestamp of last scan
+- **Red dot indicator** on the alert button when IF 10+ papers are found
+- **150+ journal impact factor lookup table** covering all major neuroscience, pharmacology, pain, behavioral, and biomedical journals
+- **NCBI PubMed E-utilities integration** using `esearch` and `esummary` endpoints for live paper retrieval
+- Results sorted by journal impact factor descending across all products in a single unified view
+- Each alert card shows: paper title (linked to PubMed/DOI), journal, authors, publication date, PMID, and IF bar
+
+### Fixed
+- Replaced `AbortSignal.timeout()` with `AbortController` + `setTimeout` for cross-browser compatibility (resolved `DataCloneError` in Chrome)
+
+### Changed
+- Updated README to document the Publication Alerts feature, alert configuration options, and journal IF lookup table
+
+---
+
+## [1.0.0] — 2025-04-28
+
+### Added
+- Initial release of the Maze Engineers Research Trend Forecaster
+- **9 product categories**: Spatial Memory, Anxiety & Fear, Depression, Social, Motor, Operant, Pain, Zebrafish, Drosophila
+- **75+ behavioral test products** with pre-baked PubMed publication trend data (2020–2024)
+- **Trend & Forecast view** per product:
+  - Annual publication bar chart (2020–2024)
+  - 2024 paper count, 5-year growth %, year-over-year change, peak year
+  - Trend classification: Rising, Stable, Declining, or Emerging
+  - AI demand forecast for 2025 (High / Moderate / Low) with confidence score
+  - 3 key research drivers per product
+  - Strategic recommendation for Maze Engineers
+  - 3 hot research areas
+- **Publications view** per product:
+  - Up to 8 recent high-impact featured papers (2024–2025)
+  - Sorted by journal impact factor descending
+  - Color-coded by impact tier (purple / green / yellow / gray)
+  - NEW 2025 badge for papers published in 2025
+  - Linked titles to PubMed or DOI
+  - Live "Search latest papers on PubMed" button per product
+- **Species badges** on every product tile: mouse, rat, zebrafish, drosophila
+- **Species-matched PubMed queries** for more accurate publication counts
+- Keyword data sourced from Maze Engineers product keyword CSV
+- Fully self-contained single HTML file — no dependencies, no build step, no API keys
+- Local server instructions for Windows, Mac/Linux, and Node.js
+- GitHub Pages hosting instructions
+
+### Files
+- `index.html` — full application
+- `README.md` — documentation
+- `LICENSE` — proprietary license
+- `.gitignore` — standard ignore rules
+
+---
+
+## Roadmap
+
+Planned features for future releases:
+
+- **Email digest** — weekly summary of new high-impact publications delivered by email
+- **Saved alert presets** — save preferred IF threshold and date range settings across sessions
+- **Product comparison view** — side-by-side publication trend charts for multiple products
+- **Export to CSV** — download alert scan results as a spreadsheet
+- **2025 publication count updates** — refresh pre-baked annual counts as 2025 data matures
+- **Google Scholar integration** — supplement PubMed data with citation counts

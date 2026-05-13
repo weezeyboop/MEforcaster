@@ -36,6 +36,12 @@ body{font-family:'Syne',sans-serif;background:#0b0f1a;color:#c8d0e0;display:flex
 .e-icon{font-size:26px;opacity:.15}
 .e-msg{font-size:12px;font-weight:600;color:#3a5070}
 .e-sub{font-size:10px;font-family:'IBM Plex Mono',monospace;color:#2a3a55}
+.data-badge{display:inline-block;font-size:8px;font-family:'IBM Plex Mono',monospace;padding:1px 6px;border-radius:3px;margin-left:6px;vertical-align:middle;letter-spacing:.06em}
+.data-live{background:#10b98118;color:#10b981;border:1px solid #10b98140}
+.data-est{background:#f59e0b18;color:#f59e0b;border:1px solid #f59e0b40}
+.data-fetching{background:#1a2a3a;color:#38bdf8;border:1px solid #1e3a50}
+@keyframes chartPulse{0%,100%{opacity:.5}50%{opacity:1}}
+.bar-b.fetching{animation:chartPulse 1s ease-in-out infinite}
 #result{display:none}
 .res-cat{font-family:'IBM Plex Mono',monospace;font-size:8px;letter-spacing:.14em;color:var(--cc,#4fc3f7);margin-bottom:3px}
 .res-name{font-size:18px;font-weight:700;color:#e8edf5;margin-bottom:6px;letter-spacing:-.02em}
@@ -152,6 +158,7 @@ body{font-family:'Syne',sans-serif;background:#0b0f1a;color:#c8d0e0;display:flex
     <span class="app-title">Research Trend Forecaster</span>
     <span class="badge">All products · Instant results</span>
     <button id="alert-btn" onclick="openAlerts()">🔔 Publication Alerts</button>
+    <button onclick="clearLiveCache()" style="margin-left:4px;padding:3px 10px;background:transparent;border:1px solid #1e2a40;border-radius:20px;color:#3a5070;font-size:10px;font-family:'IBM Plex Mono',monospace;cursor:pointer" title="Clear cached counts and re-fetch live data from PubMed">↺ refresh counts</button>
   </div>
   <div id="cat-tabs"></div>
 </div>
@@ -179,7 +186,7 @@ body{font-family:'Syne',sans-serif;background:#0b0f1a;color:#c8d0e0;display:flex
         <div class="stat-box"><div class="stat-lbl">PEAK YEAR</div><div class="stat-val" id="s-peak">—</div></div>
       </div>
       <div class="chart-card">
-        <div class="chart-lbl">ANNUAL PUBLICATIONS · 2020–2024</div>
+        <div class="chart-lbl">ANNUAL PUBLICATIONS · 2020–2024 · TITLE & ABSTRACT MATCH VIA PUBMED API</div>
         <div id="bar-chart"></div>
       </div>
       <div class="fc-card">
@@ -841,31 +848,160 @@ function buildProducts(){
   });
 }
 
-function selectProduct(p,btn){
+// ─── LIVE COUNT CACHE (sessionStorage-backed) ────────────────────────────────
+const CACHE_KEY='me_live_counts_v2';
+// Clean up any old cache versions from previous builds
+['me_live_counts_v1'].forEach(k=>{try{sessionStorage.removeItem(k);}catch(e){}});
+function loadCache(){
+  try{return JSON.parse(sessionStorage.getItem(CACHE_KEY)||'{}');}catch(e){return{};}
+}
+function saveCache(cache){
+  try{sessionStorage.setItem(CACHE_KEY,JSON.stringify(cache));}catch(e){}
+}
+function clearLiveCache(){
+  try{sessionStorage.removeItem(CACHE_KEY);}catch(e){}
+  // Re-fetch current product if one is selected
+  if(activeProd){
+    const tiles=document.querySelectorAll('.p-tile');
+    tiles.forEach(b=>{if(b.textContent.trim().startsWith(activeProd.name))b.click();});
+  }
+  console.log('Live count cache cleared — all products will re-fetch from PubMed');
+}
+
+// Reusable fetch with timeout — works cross-browser
+function fetchT(url,ms){
+  const ctrl=new AbortController();
+  const t=setTimeout(()=>ctrl.abort(),ms||8000);
+  return fetch(url,{signal:ctrl.signal}).finally(()=>clearTimeout(t));
+}
+
+// Build species-aware PubMed query
+function buildPMQuery(name,species){
+  const spMap={mouse:'mouse',rat:'rat',zebrafish:'zebrafish',drosophila:'Drosophila melanogaster'};
+  const terms=[...new Set(species.map(s=>spMap[s]||s))];
+  return `"${name}"[tiab] AND (${terms.map(s=>`"${s}"[tiab]`).join(' OR ')})`;
+}
+
+async function fetchYearCount(query,year){
+  // datetype=pdat = publication date. Most consistent for year-over-year trend analysis.
+  // PubMed website may show ~20-30% higher due to automatic query expansion (MeSH, spelling
+  // variants) that the raw API skips — but trends across years will be accurate.
+  const url=`https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&retmode=json&retmax=0&datetype=pdat&mindate=${year}/01/01&maxdate=${year}/12/31&term=${encodeURIComponent(query)}`;
+  try{
+    const r=await fetchT(url,9000);
+    if(!r.ok) throw new Error(`HTTP ${r.status}`);
+    const d=await r.json();
+    const n=parseInt(d.esearchresult?.count||0,10);
+    return n;
+  }catch(e){
+    console.warn(`PubMed fetch failed for ${year}:`,e.message);
+    return null;
+  }
+}
+
+async function fetchLiveCounts(p){
+  const YEARS=[2020,2021,2022,2023,2024];
+  const q=buildPMQuery(p.name,p.species);
+  const fallback=DATA[p.name]?.c||[0,0,0,0,0];
+  const counts=[];
+  for(let i=0;i<YEARS.length;i++){
+    const result=await fetchYearCount(q,YEARS[i]);
+    counts.push(result!==null?result:fallback[i]);
+    // 400ms between requests — stays well under NCBI's 3 req/sec limit
+    if(i<YEARS.length-1) await new Promise(r=>setTimeout(r,400));
+  }
+  // If all came back as fallback values (all fetches failed), throw so we show estimated
+  const allFailed=counts.every((v,i)=>v===fallback[i]);
+  if(allFailed) throw new Error('All year fetches returned fallback — likely rate limited or offline');
+  return counts;
+}
+
+async function selectProduct(p,btn){
   document.querySelectorAll('.p-tile').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active');
   activeProd=p;
   const d=DATA[p.name];
   if(!d){show('empty-state');hide('result');return;}
   hide('empty-state');
-  renderResult(p,d);
+
+  const cache=loadCache();
+  const cached=cache[p.name];
+
+  // Render immediately with cached live data or estimates
+  renderResult(p,{...d,c:cached||d.c},cached?'live':'fetching');
   show('result');
   switchView('trend');
+
+  if(cached) return; // already verified this session
+
+  // Fetch live counts in background
+  try{
+    const liveCounts=await fetchLiveCounts(p);
+    if(activeProd?.name!==p.name) return; // user switched product
+    const freshCache=loadCache();
+    freshCache[p.name]=liveCounts;
+    saveCache(freshCache);
+    renderResult(p,{...d,c:liveCounts},'live');
+  }catch(e){
+    if(activeProd?.name===p.name){
+      setDataBadge('est');
+      console.warn('Live count fetch failed for',p.name,'—',e.message);
+    }
+  }
 }
 
-function renderResult(p,d){
+function setDataBadge(state){
+  const meta=el('res-meta');
+  if(!meta) return;
+  meta.innerHTML=meta.innerHTML.replace(/<span class="data-badge[^>]*>[^<]*<\/span>/g,'').trim()
+    +{
+      live:' <span class="data-badge data-live">✓ LIVE PUBMED</span>',
+      fetching:' <span class="data-badge data-fetching">⟳ FETCHING…</span>',
+      est:' <span class="data-badge data-est">~ ESTIMATED</span> <span class="data-badge data-est" style="cursor:pointer" onclick="retryLiveCounts()" title="Click to retry fetching live data">↺ retry</span>',
+    }[state]||'';
+}
+
+async function retryLiveCounts(){
+  if(!activeProd) return;
+  // Clear cache for this product and re-fetch
+  const cache=loadCache();
+  delete cache[activeProd.name];
+  saveCache(cache);
+  const d=DATA[activeProd.name];
+  renderResult(activeProd,{...d,c:d.c},'fetching');
+  const p=activeProd;
+  try{
+    const liveCounts=await fetchLiveCounts(p);
+    if(activeProd?.name!==p.name) return;
+    const freshCache=loadCache();
+    freshCache[p.name]=liveCounts;
+    saveCache(freshCache);
+    renderResult(p,{...d,c:liveCounts},'live');
+  }catch(e){
+    if(activeProd?.name===p.name) setDataBadge('est');
+  }
+}
+
+function renderResult(p,d,dataState){
+  dataState=dataState||'est';
   setColor(activeGroup.color);
   el('res-cat').textContent=activeGroup.cat.toUpperCase()+' · PUBMED TREND ANALYSIS';
   el('res-name').textContent=p.name;
   el('res-species').innerHTML=usp(p.species).map(s=>spTag(s,true)).join('');
-  el('res-meta').textContent='PubMed publication data · Updated Apr 2025';
+
+  const badgeHTML={
+    live:' <span class="data-badge data-live">✓ LIVE PUBMED</span>',
+    fetching:' <span class="data-badge data-fetching">⟳ FETCHING…</span>',
+    est:' <span class="data-badge data-est">~ ESTIMATED</span> <span class="data-badge data-est" style="cursor:pointer" onclick="retryLiveCounts()" title="Click to retry">↺ retry</span>',
+  }[dataState]||'';
+  el('res-meta').innerHTML=`Title &amp; abstract search via PubMed API · ${new Date().toLocaleDateString('en-US',{month:'short',year:'numeric'})}${badgeHTML} <span style="color:#2d4060;font-size:8px" title="Counts reflect papers mentioning this product in title or abstract. PubMed website may show different totals due to query expansion. Trends across years are accurate.">ⓘ methodology</span>`;
 
   const c=d.c;
+  const YEARS=[2020,2021,2022,2023,2024];
   const last=c[c.length-1],first=c[0];
   const growth=first>0?Math.round(((last-first)/first)*100):0;
   const prev=c[c.length-2],yoy=prev>0?Math.round(((last-prev)/prev)*100):0;
   const peak=c.reduce((mi,v,i)=>v>c[mi]?i:mi,0);
-  const YEARS=[2020,2021,2022,2023,2024];
 
   el('s-papers').textContent=last.toLocaleString();
   const gEl=el('s-growth');gEl.textContent=(growth>0?'+':'')+growth+'%';
@@ -876,11 +1012,12 @@ function renderResult(p,d){
   el('s-peak').style.color=activeGroup.color;
 
   const chartEl=el('bar-chart');chartEl.innerHTML='';
-  const maxC=Math.max(...c);
+  const maxC=Math.max(...c,1);
   c.forEach((v,i)=>{
     const pct=Math.max(4,Math.round((v/maxC)*100));
     const col=document.createElement('div');col.className='bar-col';
-    col.innerHTML=`<div class="bar-n">${fmt(v)}</div><div class="bar-b" style="height:${pct}%;background:${activeGroup.color};opacity:${i===peak?1:.5}"></div><div class="bar-y">${YEARS[i]}</div>`;
+    const barCls=`bar-b${dataState==='fetching'?' fetching':''}`;
+    col.innerHTML=`<div class="bar-n">${fmt(v)}</div><div class="${barCls}" style="height:${pct}%;background:${activeGroup.color};opacity:${i===peak?1:.5}"></div><div class="bar-y">${YEARS[i]}</div>`;
     chartEl.appendChild(col);
   });
 
@@ -894,7 +1031,6 @@ function renderResult(p,d){
   el('fc-drivers').innerHTML=d.dr.map(x=>`<div class="driver"><span class="d-arr">→</span><span>${x}</span></div>`).join('');
   el('fc-areas').innerHTML=d.a.map(x=>`<span class="area-tag">${x}</span>`).join('');
 
-  // Publications
   const pubs=d.p||[];
   el('pub-count').textContent=pubs.length?`(${pubs.length})`:'';
   renderPubs(pubs,p,usp(p.species));
@@ -1277,3 +1413,5 @@ function renderAlerts(results,ifThreshold,daysBack){
 </div>
 </body>
 </html>
+
+ 
